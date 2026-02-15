@@ -281,19 +281,19 @@ function bookAppointment(doctorId) {
             <form onsubmit="submitBooking(event, ${doctorId})">
                 <div class="form-group">
                     <label>Your Name</label>
-                    <input type="text" required placeholder="Enter your full name">
+                    <input type="text" name="patient_name" required placeholder="Enter your full name">
                 </div>
                 <div class="form-group">
                     <label>Phone Number</label>
-                    <input type="tel" required placeholder="Enter your phone number">
+                    <input type="tel" name="patient_phone" required placeholder="Enter your phone number">
                 </div>
                 <div class="form-group">
                     <label>Preferred Date</label>
-                    <input type="date" required min="${getTodayDate()}">
+                    <input type="date" name="preferred_date" required min="${getTodayDate()}">
                 </div>
                 <div class="form-group">
                     <label>Preferred Time</label>
-                    <select required>
+                    <select name="preferred_time" required>
                         <option value="">Select time slot</option>
                         <option value="09:00">09:00 AM</option>
                         <option value="10:00">10:00 AM</option>
@@ -305,7 +305,7 @@ function bookAppointment(doctorId) {
                 </div>
                 <div class="form-group">
                     <label>Reason for Visit (Optional)</label>
-                    <textarea placeholder="Brief description of your concerns"></textarea>
+                    <textarea name="reason" placeholder="Brief description of your concerns"></textarea>
                 </div>
                 <div class="booking-summary">
                     <div class="summary-row">
@@ -330,18 +330,47 @@ function bookAppointment(doctorId) {
     });
 }
 
-// Submit booking
+// Submit booking (sends to server when logged in)
 function submitBooking(event, doctorId) {
     event.preventDefault();
     const doctor = doctorsData.find(d => d.id === doctorId);
     if (!doctor) return;
 
-    // Here you would normally send this data to a server
-    alert(`Appointment booked successfully with ${doctor.name}!\n\nYou will receive a confirmation email shortly.`);
+    const form = event.target;
+    const payload = {
+        doctor_id: doctor.id,
+        doctor_name: doctor.name,
+        preferred_date: form.elements['preferred_date'].value,
+        preferred_time: form.elements['preferred_time'].value,
+        patient_name: form.elements['patient_name'].value,
+        patient_phone: form.elements['patient_phone'].value,
+        reason: (form.elements['reason'] && form.elements['reason'].value) || ''
+    };
 
-    // Close modal
-    const overlay = event.target.closest('.modal-overlay');
-    if (overlay) overlay.remove();
+    const opts = { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) };
+    fetch('/api/appointments', opts)
+        .then(function(r) {
+            if (r.status === 401) {
+                if (confirm('Please sign in to book an appointment. Go to login?')) {
+                    window.location.href = 'login.html?next=' + encodeURIComponent(window.location.href);
+                }
+                return null;
+            }
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            const overlay = event.target.closest('.modal-overlay');
+            if (overlay) overlay.remove();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Appointment requested successfully with ' + doctor.name + '. You will be contacted to confirm.');
+            }
+        })
+        .catch(function() {
+            alert('Could not save appointment. Check your connection and try again.');
+        });
 }
 
 // Get today's date in YYYY-MM-DD format

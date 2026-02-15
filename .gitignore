@@ -1,0 +1,16 @@
+# Database (local SQLite)
+eraya.db
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# IDE / OS
+.vscode/
+.cursor/
+.DS_Store
+Thumbs.db

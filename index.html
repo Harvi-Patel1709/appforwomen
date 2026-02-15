@@ -65,6 +65,7 @@
                     <span>Profile</span>
                 </a>
             </nav>
+            <div id="auth-status" style="margin-top: auto; padding: 16px 0; font-size: 14px;"></div>
         </aside>
 
         <!-- Main Content Area -->
@@ -205,6 +206,8 @@
         </aside>
     </div>
 
+    <script src="auth.js"></script>
     <script src="script.js"></script>
+    <script>if (window.ErayaAuth) ErayaAuth.renderAuthStatus('auth-status');</script>
 </body>
 </html>

@@ -47,13 +47,23 @@ ERAYA is a desktop-centric wellness platform built with modern web technologies,
 - styles.css - Complete stylesheet
 - script.js - Dashboard scripts
 
+## 🔐 Server-side features (Login, Booking, Symptoms)
+
+The app includes a **Flask backend** with SQLite for:
+
+- **User login** – Register and sign in at `login.html`; session cookies keep you logged in.
+- **Doctor appointment booking** – Bookings from the Doctors page are stored (login required).
+- **Symptoms page** – Symptom logs are saved and loaded by date (login required).
+
+**Run the server** so these work: `python main.py` then open http://localhost:8080 (do not open HTML files directly).  
+See **BACKEND-GUIDANCE.md** for technology choices and API details.
+
 ## 🚀 Usage (local)
 
-1. Open `index.html` in a browser, or run: `python main.py` then visit http://localhost:8080
-2. Navigate to Doctors page
-3. Search and filter doctors
-4. Click Contact to view details
-5. Click Book Appointment to schedule
+1. Run the server: `pip install -r requirements.txt` then `python main.py`. Visit http://localhost:8080
+2. Optionally register/login via the **Login** link in the sidebar (or open `login.html`)
+3. Navigate to Doctors → search/filter → Book Appointment (saved when logged in)
+4. Add Symptoms from the dashboard button; logs are saved when logged in
 
 ## ☁️ Deploy on Google Cloud (App Engine)
 

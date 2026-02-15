@@ -233,7 +233,7 @@
 
         <div class="notes-section">
             <h3 style="margin-bottom: 15px; color: var(--dark-text);">Additional Notes (Optional)</h3>
-            <textarea placeholder="Add any additional details about how you're feeling..."></textarea>
+            <textarea id="symptomNotes" placeholder="Add any additional details about how you're feeling..."></textarea>
         </div>
 
         <div class="action-buttons">
@@ -242,6 +242,7 @@
         </div>
     </div>
 
+    <script src="auth.js"></script>
     <script>
         function toggleSymptom(card) {
             card.classList.toggle('selected');
@@ -249,27 +250,82 @@
 
         const slider = document.getElementById('intensitySlider');
         const intensityValue = document.getElementById('intensityValue');
+        const notesEl = document.getElementById('symptomNotes');
 
-        slider.addEventListener('input', function() {
-            intensityValue.textContent = this.value;
-        });
+        if (slider) {
+            slider.addEventListener('input', function() {
+                intensityValue.textContent = this.value;
+            });
+        }
+
+        function getTodayDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function loadSymptomsForToday() {
+            if (!window.ErayaAuth) return;
+            window.ErayaAuth.getCurrentUser().then(function(user) {
+                if (!user) return;
+                fetch('/api/symptoms?date=' + getTodayDate(), { credentials: 'include' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.log && data.log.symptoms && data.log.symptoms.length) {
+                            data.log.symptoms.forEach(function(name) {
+                                document.querySelectorAll('.symptom-name').forEach(function(el) {
+                                    if (el.textContent.trim() === name) {
+                                        el.closest('.symptom-card').classList.add('selected');
+                                    }
+                                });
+                            });
+                            if (data.log.intensity && slider) {
+                                slider.value = data.log.intensity;
+                                intensityValue.textContent = data.log.intensity;
+                            }
+                            if (data.log.notes && notesEl) notesEl.value = data.log.notes;
+                        }
+                    });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSymptomsForToday);
 
         function saveSymptoms() {
             const selectedSymptoms = document.querySelectorAll('.symptom-card.selected');
-            const symptoms = Array.from(selectedSymptoms).map(card => 
-                card.querySelector('.symptom-name').textContent
-            );
-            
-            const intensity = slider.value;
-            const notes = document.querySelector('textarea').value;
+            const symptoms = Array.from(selectedSymptoms).map(function(card) {
+                return card.querySelector('.symptom-name').textContent.trim();
+            });
+            const intensity = slider ? slider.value : 5;
+            const notes = notesEl ? notesEl.value : '';
 
-            console.log('Symptoms:', symptoms);
-            console.log('Intensity:', intensity);
-            console.log('Notes:', notes);
-
-            // Here you would typically send this data to a server
-            alert('Symptoms saved successfully!');
-            location.href = 'index.html';
+            fetch('/api/symptoms', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    log_date: getTodayDate(),
+                    symptoms: symptoms,
+                    intensity: parseInt(intensity, 10) || 5,
+                    notes: notes
+                })
+            }).then(function(r) {
+                if (r.status === 401) {
+                    if (confirm('Please sign in to save symptoms. Go to login?')) {
+                        window.location.href = 'login.html?next=' + encodeURIComponent(window.location.href);
+                    }
+                    return null;
+                }
+                return r.json();
+            }).then(function(data) {
+                if (!data) return;
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Symptoms saved successfully!');
+                    location.href = 'index.html';
+                }
+            }).catch(function() {
+                alert('Could not save. Check your connection and try again.');
+            });
         }
     </script>
 </body>
