@@ -1,1 +1,0 @@
-const express = require('express');\nconst app = express();\n\napp.get('/', (req, res) => {\n    res.send('Welcome to the App for Women!');\n});\n\napp.listen(3000, () => {\n    console.log('Server is running on port 3000');\n});
