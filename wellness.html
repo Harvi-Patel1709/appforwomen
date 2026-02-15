@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eraya - Wellness</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        .wellness-content {
+            padding: 40px;
+            background-color: var(--lavender-blush);
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+        }
+
+        .page-header h1 {
+            font-size: 42px;
+            color: var(--dark-text);
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            font-size: 16px;
+            color: var(--light-text);
+        }
+
+        .wellness-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .category-card {
+            background: linear-gradient(135deg, var(--powder-pink) 0%, var(--medium-pink) 100%);
+            border-radius: 20px;
+            padding: 35px;
+            color: var(--white);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(207, 116, 134, 0.3);
+        }
+
+        .category-card h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .category-card p {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        .resources-section {
+            background-color: var(--white);
+            border-radius: 20px;
+            padding: 35px;
+        }
+
+        .resources-section h2 {
+            font-size: 28px;
+            color: var(--dark-text);
+            margin-bottom: 25px;
+        }
+
+        .resource-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .resource-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background-color: var(--lavender-blush);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .resource-item:hover {
+            background-color: var(--light-pink);
+            transform: translateX(10px);
+        }
+
+        .resource-icon {
+            width: 60px;
+            height: 60px;
+            background-color: var(--powder-pink);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .resource-info h3 {
+            font-size: 18px;
+            color: var(--dark-text);
+            margin-bottom: 5px;
+        }
+
+        .resource-info p {
+            font-size: 14px;
+            color: var(--light-text);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Sidebar (same as dashboard) -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="logo.png" alt="Eraya Logo" class="logo-image">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="wellness.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Wellness</span>
+                    <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </a>
+                
+                <a href="doctors.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 21V5C19 3 17 3 17 3H7C7 3 5 3 5 5V21" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Doctors</span>
+                </a>
+                
+                <a href="mycycle.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2.69L5.5 9.19V20.31H18.5V9.19L12 2.69Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>My Cycle</span>
+                </a>
+                
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                
+                <a href="profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Profile</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="wellness-content">
+            <div class="page-header">
+                <h1>Wellness Hub</h1>
+                <p>Your personalized wellness journey starts here</p>
+            </div>
+
+            <div class="wellness-categories">
+                <div class="category-card">
+                    <h2>🧘‍♀️ Yoga & Stretching</h2>
+                    <p>Gentle exercises tailored to your cycle phase</p>
+                </div>
+
+                <div class="category-card">
+                    <h2>💪 Strength Training</h2>
+                    <p>Build strength with cycle-synced workouts</p>
+                </div>
+
+                <div class="category-card">
+                    <h2>🧠 Meditation</h2>
+                    <p>Guided meditation for hormonal balance</p>
+                </div>
+
+                <div class="category-card">
+                    <h2>🍎 Nutrition</h2>
+                    <p>Cycle-based meal plans and recipes</p>
+                </div>
+            </div>
+
+            <div class="resources-section">
+                <h2>Recommended for You</h2>
+                <div class="resource-list">
+                    <div class="resource-item">
+                        <div class="resource-icon">🌸</div>
+                        <div class="resource-info">
+                            <h3>Period Pain Relief Yoga</h3>
+                            <p>15-minute gentle flow to ease cramps and discomfort</p>
+                        </div>
+                    </div>
+
+                    <div class="resource-item">
+                        <div class="resource-icon">🌙</div>
+                        <div class="resource-info">
+                            <h3>Sleep Better During Your Cycle</h3>
+                            <p>Relaxation techniques for restful sleep</p>
+                        </div>
+                    </div>
+
+                    <div class="resource-item">
+                        <div class="resource-icon">🥗</div>
+                        <div class="resource-info">
+                            <h3>Iron-Rich Recipes</h3>
+                            <p>Delicious meals to replenish nutrients</p>
+                        </div>
+                    </div>
+
+                    <div class="resource-item">
+                        <div class="resource-icon">💆‍♀️</div>
+                        <div class="resource-info">
+                            <h3>Self-Care Rituals</h3>
+                            <p>Daily practices for hormonal harmony</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Eraya - Google App Engine configuration
+# Deploy: gcloud app deploy
+
+runtime: python312
+
+instance_class: F1
+
+env_variables:
+  FLASK_ENV: production
+
+handlers:
+  - url: /.*
+    script: auto
+    secure: always
+
+entrypoint: gunicorn -b :$PORT main:app

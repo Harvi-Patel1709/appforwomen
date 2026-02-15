@@ -1,0 +1,15 @@
+# Ignore version control and IDE files
+.git
+.gitignore
+.cursor
+.vscode
+*.md
+!README.md
+
+# Optional: ignore local / env files
+.env
+*.pyc
+__pycache__
+.venv
+venv
+node_modules

@@ -1,0 +1,14 @@
+.git
+.gitignore
+.cursor
+.vscode
+*.md
+!README.md
+.env
+*.pyc
+__pycache__
+.venv
+venv
+node_modules
+.gcloudignore
+app.yaml

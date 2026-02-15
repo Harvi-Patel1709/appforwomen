@@ -1,1 +1,119 @@
-App For Women 
+# ERAYA - Period Wellness Website
+
+A comprehensive period wellness website designed to help women track their menstrual cycles, find healthcare experts, access wellness resources, and manage their reproductive health.
+
+## 🌸 Project Overview
+
+ERAYA is a desktop-centric wellness platform built with modern web technologies, featuring an enhanced doctors page with full contact and booking functionality.
+
+## ✨ Key Features
+
+### Enhanced Doctors Page (NEW)
+- **Search & Filter**: Find doctors by name, specialty, location, or hospital
+- **Detailed Doctor Cards**: Ratings, experience, fees, availability status
+- **Contact System**: Direct phone/email with contact modals
+- **Booking System**: Complete appointment booking with form validation
+- **Emergency Contact**: Quick access to emergency services
+
+### Dashboard
+- Interactive calendar with cycle tracking
+- Symptom logging
+- Wellness insights
+- Cycle phase tracking
+
+### Other Pages
+- Wellness Hub with exercises and nutrition
+- Cycle tracker with predictions
+- Symptom logger
+- Settings and profile management
+
+## 🎨 Color Palette (From Figma)
+
+- Lavender Blush: #FFE6ED
+- Blush: #CF7486
+- Powder Pink: #F8BBD0
+- Milky White: #FFF8F0
+
+## 📁 Files
+
+- index.html - Dashboard
+- doctors.html - Find Doctors (ENHANCED)
+- doctors.js - Doctors functionality (NEW)
+- wellness.html - Wellness Hub
+- mycycle.html - Cycle Tracker
+- symptoms.html - Symptom Logger
+- settings.html - Settings
+- profile.html - Profile
+- styles.css - Complete stylesheet
+- script.js - Dashboard scripts
+
+## 🚀 Usage (local)
+
+1. Open `index.html` in a browser, or run: `python main.py` then visit http://localhost:8080
+2. Navigate to Doctors page
+3. Search and filter doctors
+4. Click Contact to view details
+5. Click Book Appointment to schedule
+
+## ☁️ Deploy on Google Cloud (App Engine)
+
+1. **Install Google Cloud CLI**  
+   [Install gcloud](https://cloud.google.com/sdk/docs/install)
+
+2. **Login and set project**
+   ```bash
+   gcloud auth login
+   gcloud config set project YOUR_PROJECT_ID
+   ```
+
+3. **Deploy** (from the project folder)
+   ```bash
+   gcloud app deploy
+   ```
+   Accept prompts (e.g. region). When finished, the app URL will be shown (e.g. `https://YOUR_PROJECT_ID.uc.r.appspot.com`).
+
+4. **Optional: run locally with App Engine**
+   ```bash
+   pip install -r requirements.txt
+   python main.py
+   ```
+   Then open http://localhost:8080
+
+## 🐳 Deploy with Docker on Google Cloud (Cloud Run)
+
+You can run the app as a container and deploy to **Cloud Run** (serverless, pay-per-request).
+
+1. **Build and run locally (optional)**
+   ```bash
+   docker build -t eraya .
+   docker run -p 8080:8080 eraya
+   ```
+   Open http://localhost:8080
+
+2. **Deploy to Cloud Run** (from the project folder)
+   ```bash
+   gcloud run deploy eraya --source . --region us-central1 --allow-unauthenticated
+   ```
+   Cloud Run will build the image from the Dockerfile and deploy. The command prints the live URL (e.g. `https://eraya-xxxxx-uc.a.run.app`).
+
+   Or build the image first and push to Artifact Registry, then deploy:
+   ```bash
+   gcloud auth configure-docker
+   docker build -t gcr.io/YOUR_PROJECT_ID/eraya .
+   docker push gcr.io/YOUR_PROJECT_ID/eraya
+   gcloud run deploy eraya --image gcr.io/YOUR_PROJECT_ID/eraya --region us-central1 --allow-unauthenticated
+   ```
+
+**Note:** Add image assets (`logo.png`, `holding-flowers.png`, `workout.png`, `meditation.png`, `food.png`, `doctors.png`, `focused.png`) to the project folder if you want them to appear on the dashboard.
+
+## 📋 Requirements Met
+
+✅ 5+ webpages with professional design
+✅ Advanced CSS with animations
+✅ JavaScript functionality
+✅ Desktop-optimized layout
+✅ Contact and booking features
+
+## Team
+
+[Your names here]

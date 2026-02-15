@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eraya - Settings</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        .settings-content {
+            padding: 40px;
+            background-color: var(--lavender-blush);
+        }
+
+        .settings-section {
+            background-color: var(--white);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 25px;
+        }
+
+        .settings-section h3 {
+            font-size: 24px;
+            color: var(--dark-text);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--lavender-blush);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--lavender-blush);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info h4 {
+            font-size: 16px;
+            color: var(--dark-text);
+            margin-bottom: 5px;
+        }
+
+        .setting-info p {
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background-color: #ddd;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-switch.active {
+            background-color: var(--blush);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="logo.png" alt="Eraya Logo" class="logo-image">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="wellness.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Wellness</span>
+                </a>
+                <a href="doctors.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M19 21V5C19 3 17 3 17 3H7C7 3 5 3 5 5V21" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Doctors</span>
+                </a>
+                <a href="mycycle.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2.69L5.5 9.19V20.31H18.5V9.19L12 2.69Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>My Cycle</span>
+                </a>
+                <a href="settings.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Settings</span>
+                    <svg class="nav-arrow" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Profile</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="settings-content">
+            <div class="page-header">
+                <h1>Settings</h1>
+                <p>Customize your Eraya experience</p>
+            </div>
+
+            <div class="settings-section">
+                <h3>Notifications</h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Period Reminders</h4>
+                        <p>Get notified before your period starts</p>
+                    </div>
+                    <div class="toggle-switch active" onclick="this.classList.toggle('active')">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Ovulation Alerts</h4>
+                        <p>Track your fertile window</p>
+                    </div>
+                    <div class="toggle-switch active" onclick="this.classList.toggle('active')">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Daily Wellness Tips</h4>
+                        <p>Receive personalized health recommendations</p>
+                    </div>
+                    <div class="toggle-switch" onclick="this.classList.toggle('active')">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Privacy</h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Data Backup</h4>
+                        <p>Automatically backup your cycle data</p>
+                    </div>
+                    <div class="toggle-switch active" onclick="this.classList.toggle('active')">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Analytics</h4>
+                        <p>Help improve Eraya with anonymous data</p>
+                    </div>
+                    <div class="toggle-switch active" onclick="this.classList.toggle('active')">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Account</h3>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Change Password</h4>
+                        <p>Update your account password</p>
+                    </div>
+                    <button class="add-symptoms-btn" style="padding: 10px 24px;">Change</button>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h4>Delete Account</h4>
+                        <p>Permanently delete your account and data</p>
+                    </div>
+                    <button class="add-symptoms-btn" style="padding: 10px 24px; background-color: #ff6b6b;">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

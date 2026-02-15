@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eraya - My Cycle</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        .cycle-content {
+            padding: 40px;
+            background-color: var(--lavender-blush);
+        }
+
+        .cycle-overview {
+            background: linear-gradient(135deg, var(--powder-pink) 0%, var(--medium-pink) 100%);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            color: var(--white);
+        }
+
+        .cycle-overview h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .cycle-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .stat-box {
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .cycle-phases {
+            background-color: var(--white);
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 30px;
+        }
+
+        .cycle-phases h3 {
+            font-size: 26px;
+            color: var(--dark-text);
+            margin-bottom: 25px;
+        }
+
+        .phase-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .phase-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .phase-marker {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .phase-marker.menstrual { background-color: #FF6B9D; }
+        .phase-marker.follicular { background-color: #FFD93D; }
+        .phase-marker.ovulation { background-color: #4ECDC4; }
+        .phase-marker.luteal { background-color: #B19CD9; }
+
+        .phase-marker.active {
+            box-shadow: 0 0 0 4px rgba(207, 116, 134, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(207, 116, 134, 0.3); }
+            50% { box-shadow: 0 0 0 8px rgba(207, 116, 134, 0.2); }
+        }
+
+        .phase-content {
+            flex: 1;
+        }
+
+        .phase-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 5px;
+        }
+
+        .phase-days {
+            font-size: 14px;
+            color: var(--light-text);
+            margin-bottom: 10px;
+        }
+
+        .phase-description {
+            font-size: 14px;
+            color: var(--light-text);
+            line-height: 1.5;
+        }
+
+        .predictions-section {
+            background-color: var(--white);
+            border-radius: 20px;
+            padding: 35px;
+        }
+
+        .predictions-section h3 {
+            font-size: 26px;
+            color: var(--dark-text);
+            margin-bottom: 25px;
+        }
+
+        .prediction-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .prediction-card {
+            background-color: var(--lavender-blush);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .prediction-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .prediction-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 8px;
+        }
+
+        .prediction-date {
+            font-size: 18px;
+            color: var(--blush);
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="logo.png" alt="Eraya Logo" class="logo-image">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="wellness.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Wellness</span>
+                </a>
+                
+                <a href="doctors.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 21V5C19 3 17 3 17 3H7C7 3 5 3 5 5V21" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Doctors</span>
+                </a>
+                
+                <a href="mycycle.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2.69L5.5 9.19V20.31H18.5V9.19L12 2.69Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>My Cycle</span>
+                    <svg class="nav-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </a>
+                
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                
+                <a href="profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Profile</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="cycle-content">
+            <div class="page-header">
+                <h1>My Cycle Tracker</h1>
+                <p>Understanding your cycle, empowering your health</p>
+            </div>
+
+            <div class="cycle-overview">
+                <h2>Current Cycle Day: 2</h2>
+                <p style="font-size: 16px; opacity: 0.9;">You're in the Ovulation phase</p>
+                
+                <div class="cycle-stats">
+                    <div class="stat-box">
+                        <div class="stat-value">28</div>
+                        <div class="stat-label">Average Cycle Length</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">5</div>
+                        <div class="stat-label">Average Period Length</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">14</div>
+                        <div class="stat-label">Days Until Next Period</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cycle-phases">
+                <h3>Your Cycle Phases</h3>
+                <div class="phase-timeline">
+                    <div class="phase-item">
+                        <div class="phase-marker menstrual">🌙</div>
+                        <div class="phase-content">
+                            <div class="phase-name">Menstrual Phase</div>
+                            <div class="phase-days">Days 1-5</div>
+                            <div class="phase-description">
+                                Your period. Energy levels may be lower. Focus on rest, gentle movement, and iron-rich foods.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="phase-item">
+                        <div class="phase-marker follicular">🌱</div>
+                        <div class="phase-content">
+                            <div class="phase-name">Follicular Phase</div>
+                            <div class="phase-days">Days 6-14</div>
+                            <div class="phase-description">
+                                Rising energy and optimism. Great time for trying new workouts and tackling challenging tasks.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="phase-item">
+                        <div class="phase-marker ovulation active">🌸</div>
+                        <div class="phase-content">
+                            <div class="phase-name">Ovulation Phase</div>
+                            <div class="phase-days">Days 15-17</div>
+                            <div class="phase-description">
+                                Peak energy and confidence. You're currently here! Perfect time for important meetings and high-intensity workouts.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="phase-item">
+                        <div class="phase-marker luteal">🍂</div>
+                        <div class="phase-content">
+                            <div class="phase-name">Luteal Phase</div>
+                            <div class="phase-days">Days 18-28</div>
+                            <div class="phase-description">
+                                Energy gradually decreases. Focus on self-care, moderate exercise, and prepare for your period.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="predictions-section">
+                <h3>Upcoming Predictions</h3>
+                <div class="prediction-cards">
+                    <div class="prediction-card">
+                        <div class="prediction-icon">📅</div>
+                        <div class="prediction-title">Next Period</div>
+                        <div class="prediction-date">Feb 16, 2026</div>
+                    </div>
+
+                    <div class="prediction-card">
+                        <div class="prediction-icon">🌸</div>
+                        <div class="prediction-title">Next Ovulation</div>
+                        <div class="prediction-date">Feb 28, 2026</div>
+                    </div>
+
+                    <div class="prediction-card">
+                        <div class="prediction-icon">🎯</div>
+                        <div class="prediction-title">Fertile Window</div>
+                        <div class="prediction-date">Feb 26 - Mar 2</div>
+                    </div>
+
+                    <div class="prediction-card">
+                        <div class="prediction-icon">💪</div>
+                        <div class="prediction-title">Peak Energy Days</div>
+                        <div class="prediction-date">Feb 24 - 28</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

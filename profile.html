@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eraya - Profile</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        .profile-content {
+            padding: 40px;
+            background-color: var(--lavender-blush);
+        }
+
+        .profile-header-section {
+            background: linear-gradient(135deg, var(--powder-pink) 0%, var(--medium-pink) 100%);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background-color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .profile-info {
+            flex: 1;
+            color: var(--white);
+        }
+
+        .profile-info h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .profile-info p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .edit-profile-btn {
+            padding: 12px 28px;
+            background-color: var(--white);
+            color: var(--blush);
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .info-card {
+            background-color: var(--white);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .info-card h3 {
+            font-size: 20px;
+            color: var(--dark-text);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--lavender-blush);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--lavender-blush);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="logo.png" alt="Eraya Logo" class="logo-image">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="wellness.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Wellness</span>
+                </a>
+                <a href="doctors.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M19 21V5C19 3 17 3 17 3H7C7 3 5 3 5 5V21" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Doctors</span>
+                </a>
+                <a href="mycycle.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2.69L5.5 9.19V20.31H18.5V9.19L12 2.69Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>My Cycle</span>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+                <a href="profile.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <span>Profile</span>
+                    <svg class="nav-arrow" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="profile-content">
+            <div class="profile-header-section">
+                <div class="profile-avatar">👤</div>
+                <div class="profile-info">
+                    <h1>User Profile</h1>
+                    <p>Member since January 2026</p>
+                </div>
+                <button class="edit-profile-btn">Edit Profile</button>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Personal Information</h3>
+                    <div class="info-row">
+                        <span class="info-label">Full Name</span>
+                        <span class="info-value">User Name</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9ce9eff9eedcf9e4fdf1ecf0f9b2fff3f1">[email&#160;protected]</a></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Date of Birth</span>
+                        <span class="info-value">January 1, 2000</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Location</span>
+                        <span class="info-value">KÄtpÄdi, Tamil Nadu</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Health Information</h3>
+                    <div class="info-row">
+                        <span class="info-label">Height</span>
+                        <span class="info-value">165 cm</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Weight</span>
+                        <span class="info-value">60 kg</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Blood Type</span>
+                        <span class="info-value">O+</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Allergies</span>
+                        <span class="info-value">None</span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Cycle Statistics</h3>
+                    <div class="info-row">
+                        <span class="info-label">Average Cycle</span>
+                        <span class="info-value">28 days</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Average Period</span>
+                        <span class="info-value">5 days</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Period</span>
+                        <span class="info-value">Feb 2, 2026</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Cycles Tracked</span>
+                        <span class="info-value">6</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eraya - Add Symptoms</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .symptoms-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .symptoms-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .symptoms-header h1 {
+            font-size: 36px;
+            color: var(--dark-text);
+            margin-bottom: 10px;
+        }
+
+        .symptoms-header p {
+            font-size: 16px;
+            color: var(--light-text);
+        }
+
+        .symptoms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .symptom-card {
+            background-color: var(--white);
+            border: 2px solid var(--light-pink);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .symptom-card:hover {
+            border-color: var(--blush);
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(207, 116, 134, 0.2);
+        }
+
+        .symptom-card.selected {
+            background-color: var(--powder-pink);
+            border-color: var(--blush);
+        }
+
+        .symptom-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .symptom-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+        .intensity-section {
+            margin-top: 30px;
+            padding: 30px;
+            background-color: rgba(255, 214, 229, 0.3);
+            border-radius: 16px;
+        }
+
+        .intensity-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--dark-text);
+        }
+
+        .intensity-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 10px;
+            background: linear-gradient(to right, #4ECDC4, #FFD93D, #FF6B9D);
+            outline: none;
+            margin-bottom: 10px;
+        }
+
+        .intensity-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .notes-section {
+            margin-top: 30px;
+        }
+
+        .notes-section textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid var(--light-pink);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--blush);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background-color: #b86474;
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            background-color: var(--white);
+            color: var(--blush);
+            border: 2px solid var(--blush);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--light-pink);
+        }
+    </style>
+</head>
+<body style="background-color: var(--lavender-blush);">
+    <div class="symptoms-container">
+        <div class="symptoms-header">
+            <h1>How are you feeling?</h1>
+            <p>Select all symptoms you're experiencing</p>
+        </div>
+
+        <div class="symptoms-grid">
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">😖</div>
+                <div class="symptom-name">Cramps</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">🤕</div>
+                <div class="symptom-name">Headache</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">😫</div>
+                <div class="symptom-name">Fatigue</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">😢</div>
+                <div class="symptom-name">Mood Swings</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">🤢</div>
+                <div class="symptom-name">Nausea</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">💧</div>
+                <div class="symptom-name">Bloating</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">🌡️</div>
+                <div class="symptom-name">Hot Flashes</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">😴</div>
+                <div class="symptom-name">Insomnia</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">🍔</div>
+                <div class="symptom-name">Cravings</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">😣</div>
+                <div class="symptom-name">Back Pain</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">💭</div>
+                <div class="symptom-name">Brain Fog</div>
+            </div>
+
+            <div class="symptom-card" onclick="toggleSymptom(this)">
+                <div class="symptom-icon">😰</div>
+                <div class="symptom-name">Anxiety</div>
+            </div>
+        </div>
+
+        <div class="intensity-section">
+            <h3>Overall Discomfort Level</h3>
+            <input type="range" min="1" max="10" value="5" class="intensity-slider" id="intensitySlider">
+            <div class="intensity-labels">
+                <span>Mild</span>
+                <span>Moderate</span>
+                <span>Severe</span>
+            </div>
+            <p style="text-align: center; margin-top: 10px; font-weight: 600; color: var(--blush);">
+                Level: <span id="intensityValue">5</span>/10
+            </p>
+        </div>
+
+        <div class="notes-section">
+            <h3 style="margin-bottom: 15px; color: var(--dark-text);">Additional Notes (Optional)</h3>
+            <textarea placeholder="Add any additional details about how you're feeling..."></textarea>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="location.href='index.html'">Cancel</button>
+            <button class="btn btn-primary" onclick="saveSymptoms()">Save Symptoms</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleSymptom(card) {
+            card.classList.toggle('selected');
+        }
+
+        const slider = document.getElementById('intensitySlider');
+        const intensityValue = document.getElementById('intensityValue');
+
+        slider.addEventListener('input', function() {
+            intensityValue.textContent = this.value;
+        });
+
+        function saveSymptoms() {
+            const selectedSymptoms = document.querySelectorAll('.symptom-card.selected');
+            const symptoms = Array.from(selectedSymptoms).map(card => 
+                card.querySelector('.symptom-name').textContent
+            );
+            
+            const intensity = slider.value;
+            const notes = document.querySelector('textarea').value;
+
+            console.log('Symptoms:', symptoms);
+            console.log('Intensity:', intensity);
+            console.log('Notes:', notes);
+
+            // Here you would typically send this data to a server
+            alert('Symptoms saved successfully!');
+            location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
