@@ -50,7 +50,10 @@ function HistorySection() {
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') commitEdit();
-    if (e.key === 'Escape') setEditing(false);
+    if (e.key === 'Escape') {
+      setTempWt(weight);
+      setEditing(false);
+    }
   }
 
   // ── dot colours mirror styles.css ─────────────────────────────────────────

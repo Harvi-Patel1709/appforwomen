@@ -20,10 +20,19 @@ function SymptomTracker() {
   const [recentLogs,  setRecentLogs]  = useState([]);
   const weightRef = useRef(null);
 
-  // Expose toggle globally
+  // Expose toggle globally (wellness/index may call before mount — see pending flag in HTML)
   useEffect(() => {
-    window.toggleSymptomTracker = () => setIsOpen(p => !p);
-    return () => { delete window.toggleSymptomTracker; };
+    const toggle = () => setIsOpen((p) => !p);
+    window._symptomTrackerToggleImpl = toggle;
+    window.toggleSymptomTracker = toggle;
+    if (window._symptomTrackerOpenPending) {
+      setIsOpen(true);
+      window._symptomTrackerOpenPending = false;
+    }
+    return () => {
+      delete window.toggleSymptomTracker;
+      delete window._symptomTrackerToggleImpl;
+    };
   }, []);
 
   // Auto-focus weight input when entering edit mode
@@ -141,28 +150,59 @@ function SymptomTracker() {
   // Count selected items across all categories
   const totalSelected = Object.values(selections).reduce((n, s) => n + (s ? s.size : 0), 0);
 
-  // ── load / save ───────────────────────────────────────────────────────────
+  // ── load / save (symptoms.html uses legacy { symptoms, water, weight }; tracker uses trackerData) ──
+  function legacyFlatSymptomsToSets(flat) {
+    const rebuilt = {};
+    if (!flat || typeof flat !== 'object') return rebuilt;
+    Object.entries(flat).forEach(([catId, items]) => {
+      if (!Array.isArray(items)) return;
+      const set = new Set();
+      items.forEach((item) => {
+        const label = item && (typeof item === 'string' ? item : item.label);
+        if (label) set.add(label);
+      });
+      if (set.size) rebuilt[catId] = set;
+    });
+    return rebuilt;
+  }
+
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('symptomsData') || '{}');
       const log = stored[date];
-      if (log && log.trackerData) {
-        // Restore Sets from arrays
+      if (!log || typeof log !== 'object') {
+        setSelections({});
+        setWater(0);
+        setWeight('');
+        setNote('');
+        return;
+      }
+      if (log.trackerData) {
         const rebuilt = {};
         Object.entries(log.trackerData.selections || {}).forEach(([k, v]) => {
           rebuilt[k] = new Set(Array.isArray(v) ? v : []);
         });
         setSelections(rebuilt);
-        setWater(log.trackerData.water || 0);
-        setWeight(log.trackerData.weight || '');
+        setWater(typeof log.trackerData.water === 'number' ? log.trackerData.water : 0);
+        setWeight(log.trackerData.weight != null && log.trackerData.weight !== '' ? String(log.trackerData.weight) : '');
         setNote(log.trackerData.note || '');
+      } else if (log.symptoms) {
+        setSelections(legacyFlatSymptomsToSets(log.symptoms));
+        setWater(typeof log.water === 'number' ? log.water : 0);
+        setWeight(log.weight != null && log.weight !== '' ? String(log.weight) : '');
+        setNote('');
       } else {
         setSelections({});
         setWater(0);
         setWeight('');
         setNote('');
       }
-    } catch (_) {}
+    } catch (_) {
+      setSelections({});
+      setWater(0);
+      setWeight('');
+      setNote('');
+    }
   }, [date]);
 
   function handleSave() {
@@ -194,6 +234,7 @@ function SymptomTracker() {
           weight,
           note,
         },
+        timestamp: new Date().toISOString(),
         savedAt: new Date().toISOString(),
       };
       localStorage.setItem('symptomsData', JSON.stringify(stored));
@@ -455,7 +496,7 @@ function SymptomTracker() {
             fontSize: '14px', cursor: 'pointer', fontWeight: '500',
             fontFamily: 'inherit',
           }}>
-            {showLog ? 'Hide Log' : 'Recent Log'}
+            {showLog ? 'Hide log' : 'Show previous log'}
           </button>
         </div>
 

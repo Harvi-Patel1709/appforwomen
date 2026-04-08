@@ -57,13 +57,14 @@ function persistSelectionsToLocal() {
     const today = getLogDate();
     const allSymptoms = safeParseObject(localStorage.getItem('symptomsData'));
     const weightVal = document.getElementById('weightInput') ? document.getElementById('weightInput').value : '';
-    allSymptoms[today] = {
+    var prev = allSymptoms[today] && typeof allSymptoms[today] === 'object' ? allSymptoms[today] : {};
+    allSymptoms[today] = Object.assign({}, prev, {
         date: today,
         symptoms: selectedSymptoms,
         water: waterGlasses,
         weight: weightVal ? parseFloat(weightVal) : null,
         timestamp: new Date().toISOString()
-    };
+    });
     try {
         localStorage.setItem('symptomsData', JSON.stringify(allSymptoms));
         return true;

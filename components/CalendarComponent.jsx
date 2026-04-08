@@ -1,14 +1,18 @@
-// CalendarComponent.jsx
-// Fully functional calendar with colour-coded cycle phases.
-// Expects React & ReactDOM to be available globally (loaded via CDN).
-// Self-mounts into #calendar-root.
+// CalendarComponent.jsx — reference implementation (JSX).
+// Dashboard + Wellness load the runtime from /js/eraya-react-dashboard.js (plain React.createElement, no Babel fetch).
+// Update that file when changing behaviour, or keep using this file with a JSX build step.
+// Self-mount below is skipped if #calendar-root already has data-rm (bundle mounted first).
 
 function CalendarComponent() {
   const { useState } = React;
 
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selectedDay, setSelectedDay] = useState(today.getDate());
+  const [selectedYmd, setSelectedYmd] = useState({
+    y: today.getFullYear(),
+    m: today.getMonth(),
+    d: today.getDate(),
+  });
   const [phaseInfo, setPhaseInfo] = useState(null);
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -71,7 +75,7 @@ function CalendarComponent() {
 
   // ── handlers ──────────────────────────────────────────────────────────────
   function handleDayClick(day) {
-    setSelectedDay(day);
+    setSelectedYmd({ y: year, m: month, d: day });
     const { lastPeriod, cycleLength, periodLength } = getCycleData();
     const clicked   = new Date(year, month, day);
     const msDiff    = clicked - lastPeriod;
@@ -116,79 +120,115 @@ function CalendarComponent() {
       ? { outline: '2px solid #CF7486', outlineOffset: '1px' }
       : {};
 
+  function goToToday() {
+    const t = new Date();
+    const ty = t.getFullYear();
+    const tm = t.getMonth();
+    const td = t.getDate();
+    setCurrentDate(new Date(ty, tm, 1));
+    setSelectedYmd({ y: ty, m: tm, d: td });
+    const { lastPeriod, cycleLength, periodLength } = getCycleData();
+    const clicked = new Date(ty, tm, td);
+    const msDiff = clicked - lastPeriod;
+    const daysDiff = Math.floor(msDiff / 86400000);
+    const dayInCycle = ((daysDiff % cycleLength) + cycleLength) % cycleLength;
+    const phase = getPhaseName(dayInCycle, cycleLength, periodLength);
+    setPhaseInfo({ cycleDay: dayInCycle + 1, ...phase });
+  }
+
   // ── render ────────────────────────────────────────────────────────────────
   const navBtn = (label, onClick) => (
-    <button onClick={onClick} style={{
-      background: 'none', border: '1px solid #F8BBD0',
-      borderRadius: '8px', padding: '3px 10px',
+    <button type="button" onClick={onClick} aria-label={label === '‹' ? 'Previous month' : 'Next month'} style={{
+      background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.65)',
+      borderRadius: '10px', padding: '4px 12px',
       cursor: 'pointer', fontSize: '18px', lineHeight: '1',
-      color: '#CF7486', fontWeight: '600',
+      color: '#fff', fontWeight: '600',
     }}>{label}</button>
   );
 
   return (
-    <div>
-      {/* Header with navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '22px', fontWeight: '600', color: '#2D2D2D', margin: 0 }}>
-          {monthName} {year}
-        </h3>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {navBtn('‹', () => setCurrentDate(new Date(year, month - 1, 1)))}
-          {navBtn('›', () => setCurrentDate(new Date(year, month + 1, 1)))}
+    <div className="eraya-react-calendar">
+      <div className="eraya-cal-header">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+          <h3>{monthName} {year}</h3>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {navBtn('‹', () => {
+              setCurrentDate(new Date(year, month - 1, 1));
+              setPhaseInfo(null);
+            })}
+            {navBtn('›', () => {
+              setCurrentDate(new Date(year, month + 1, 1));
+              setPhaseInfo(null);
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Weekday headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '8px' }}>
-        {['M','T','W','T','F','S','S'].map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: '12px', color: '#999', fontWeight: '600' }}>{d}</div>
-        ))}
-      </div>
-
-      {/* Day grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-        {cells.map((cell, i) => {
-          const isSelected = cell.kind !== 'other' && cell.day === selectedDay
-            && month === today.getMonth() && year === today.getFullYear()
-            || (cell.kind !== 'other' && cell.day === selectedDay && phaseInfo);
-          const style = {
-            ...cellStyle(cell, isSelected),
-            ...todayOutline(cell, isSelected),
-          };
-          return (
-            <div key={i} style={style}
-              onClick={() => cell.kind !== 'other' && handleDayClick(cell.day)}>
-              {cell.day}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Selected day info */}
-      {phaseInfo && (
-        <div style={{
-          marginTop: '12px', padding: '10px 14px',
-          background: '#FFF8F0', borderRadius: '10px', fontSize: '13px',
-        }}>
-          <strong>Cycle Day {phaseInfo.cycleDay}</strong>
-          {' — '}
-          <span style={{ color: phaseInfo.color, fontWeight: '600' }}>{phaseInfo.name}</span>
+      <div className="eraya-cal-body">
+        {/* Weekday headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '10px' }}>
+          {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
+            <div key={i} style={{ textAlign: 'center', fontSize: '11px', color: '#888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{d}</div>
+          ))}
         </div>
-      )}
 
-      {/* Legend */}
-      <div style={{ marginTop: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '12px', color: '#555' }}>
-        {[
-          { color: '#FF6B9D', label: '🩸 Period' },
-          { color: '#FFD93D', label: '💛 Fertile' },
-          { color: '#4ECDC4', label: '🩵 Ovulation' },
-        ].map(({ color, label }) => (
-          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: color, display: 'inline-block', flexShrink: 0 }}></span>
-            {label}
-          </span>
-        ))}
+        {/* Day grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
+          {cells.map((cell, i) => {
+            const inCurrentMonth = cell.kind !== 'other';
+            const isSelected = inCurrentMonth
+              && cell.day === selectedYmd.d
+              && month === selectedYmd.m
+              && year === selectedYmd.y;
+            const style = {
+              ...cellStyle(cell, isSelected),
+              ...todayOutline(cell, isSelected),
+            };
+            return (
+              <div
+                key={i}
+                className={cell.kind === 'other' ? 'eraya-cal-day eraya-cal-day--muted' : 'eraya-cal-day'}
+                style={style}
+                onClick={() => cell.kind !== 'other' && handleDayClick(cell.day)}
+                role={cell.kind === 'other' ? undefined : 'button'}
+                tabIndex={cell.kind === 'other' ? undefined : -1}
+              >
+                {cell.day}
+              </div>
+            );
+          })}
+        </div>
+
+        <button type="button" className="eraya-cal-today-btn" onClick={goToToday}>
+          📍 Jump to today
+        </button>
+
+        {/* Selected day info */}
+        {phaseInfo && (
+          <div style={{
+            marginTop: '14px', padding: '12px 14px',
+            background: 'var(--milky-white, #FFF8F0)', borderRadius: '12px', fontSize: '13px',
+            border: '1px solid rgba(248, 187, 208, 0.5)',
+          }}>
+            <strong>Cycle day {phaseInfo.cycleDay}</strong>
+            {' — '}
+            <span style={{ color: phaseInfo.color, fontWeight: '600' }}>{phaseInfo.name}</span>
+          </div>
+        )}
+
+        {/* Legend */}
+        <div style={{ marginTop: '14px', display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '11px', color: '#555' }}>
+          {[
+            { color: '#FF6B9D', label: 'Period' },
+            { color: '#FFD93D', label: 'Fertile' },
+            { color: '#4ECDC4', label: 'Ovulation' },
+          ].map(({ color, label }) => (
+            <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(255,255,255,0.7)', padding: '4px 8px', borderRadius: '8px', border: '1px solid #f0e0e5' }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: color, display: 'inline-block', flexShrink: 0 }}></span>
+              {label}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

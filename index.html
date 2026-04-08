@@ -7,6 +7,15 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <script>
+    (function () {
+        window._symptomTrackerOpenPending = false;
+        window.toggleSymptomTracker = function () {
+            if (window._symptomTrackerToggleImpl) window._symptomTrackerToggleImpl();
+            else window._symptomTrackerOpenPending = true;
+        };
+    })();
+    </script>
     <div class="container">
         <!-- Left Sidebar Navigation -->
         <aside class="sidebar">
@@ -108,7 +117,7 @@
             <div class="feeling-section">
                 <h2>How are you feeling today?</h2>
                 <p>Tell us more about your body to get analysis</p>
-                <button class="add-symptoms-btn" onclick="if(window.toggleSymptomTracker){window.toggleSymptomTracker();}else{handleFeatureNavigation('symptoms.html');}">Add Symptoms +</button>
+                <button type="button" class="add-symptoms-btn" id="dashboard-add-symptoms">Add Symptoms +</button>
             </div>
 
             <!-- Inline Symptom Tracker (React) – toggled by the button above -->
@@ -151,33 +160,10 @@
         </aside>
     </div>
 
-    <!-- React 18 + Babel Standalone (CDN – no build step required) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- React Components (loaded & compiled in-browser by Babel) -->
-    <script type="text/babel" src="components/CalendarComponent.jsx" data-type="module"></script>
-    <script type="text/babel" src="components/CycleCounter.jsx"      data-type="module"></script>
-    <script type="text/babel" src="components/HistorySection.jsx"    data-type="module"></script>
-    <script type="text/babel" src="components/SymptomTracker.jsx"    data-type="module"></script>
-
-    <!-- Fallback mount (guards with data-rm to prevent double-mount) -->
-    <script type="text/babel">
-      window.addEventListener('load', function() {
-        const tryMount = (id, Comp) => {
-          const el = document.getElementById(id);
-          if (el && !el.dataset.rm && typeof Comp !== 'undefined') {
-            el.dataset.rm = '1';
-            ReactDOM.createRoot(el).render(React.createElement(Comp));
-          }
-        };
-        tryMount('calendar-root',         CalendarComponent);
-        tryMount('today-root',            CycleCounter);
-        tryMount('history-root',          HistorySection);
-        tryMount('symptom-tracker-root',  SymptomTracker);
-      });
-    </script>
+    <!-- React 18 (production) + bundled components — works on file:// and http:// (no Babel external .jsx fetch) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="js/eraya-react-dashboard.js"></script>
 
     <script src="auth.js"></script>
     <script src="script.js"></script>
@@ -222,6 +208,35 @@
         })();
     </script>
 
+    <script>
+    (function () {
+        function openDashboardSymptomTracker() {
+            if (typeof window._symptomTrackerToggleImpl === 'function') {
+                window._symptomTrackerToggleImpl();
+                return;
+            }
+            if (typeof window.toggleSymptomTracker === 'function') {
+                window.toggleSymptomTracker();
+                return;
+            }
+            window.location.href = 'symptoms.html';
+        }
+        function bindAddSymptoms() {
+            var btn = document.getElementById('dashboard-add-symptoms');
+            if (!btn || btn.dataset.bound) return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                openDashboardSymptomTracker();
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bindAddSymptoms);
+        } else {
+            bindAddSymptoms();
+        }
+    })();
+    </script>
 
 </body>
 </html>

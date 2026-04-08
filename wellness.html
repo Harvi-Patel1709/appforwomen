@@ -7,6 +7,15 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <script>
+    (function () {
+        window._symptomTrackerOpenPending = false;
+        window.toggleSymptomTracker = function () {
+            if (window._symptomTrackerToggleImpl) window._symptomTrackerToggleImpl();
+            else window._symptomTrackerOpenPending = true;
+        };
+    })();
+    </script>
     <div class="container">
         <!-- Sidebar Navigation (same as dashboard) -->
         <aside class="sidebar">
@@ -63,23 +72,7 @@
                 </button>
             </div>
 
-            <!-- Log Symptoms Card + inline tracker (same React component as dashboard) -->
-            <div class="wellness-card symptoms-cta-card" style="cursor:pointer;" onclick="if(window.toggleSymptomTracker){window.toggleSymptomTracker();}">
-                <div style="display:flex;align-items:center;gap:20px;">
-                    <div style="font-size:52px;flex-shrink:0;">🌸</div>
-                    <div style="flex:1;">
-                        <h2 style="margin-bottom:6px;">Log Today's Symptoms</h2>
-                        <p style="font-size:15px;color:var(--light-text);margin:0;">Track how your body feels — moods, cramps, flow, energy and more.</p>
-                    </div>
-                    <div style="flex-shrink:0;">
-                        <span style="display:inline-flex;align-items:center;gap:8px;background:var(--blush);color:#fff;padding:12px 22px;border-radius:30px;font-size:15px;font-weight:600;">
-                            Add Symptoms +
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Symptom Tracker expands here when card is clicked -->
+            <!-- Symptom tracker (opens from sidebar “Log Symptoms”) -->
             <div id="symptom-tracker-root"></div>
 
             <!-- Health Tips -->
@@ -171,7 +164,7 @@
 
             <div>
                 <h3 style="font-size:18px; font-weight:600; color:var(--dark-text); margin-bottom:18px;">⚡ Quick Actions</h3>
-                <button class="add-symptoms-btn" style="width:100%;margin-bottom:12px;border-radius:12px;" onclick="location.href='symptoms.html'">Log Symptoms</button>
+                <button type="button" class="add-symptoms-btn" style="width:100%;margin-bottom:12px;border-radius:12px;" onclick="if(window.toggleSymptomTracker){window.toggleSymptomTracker();}else{location.href='symptoms.html';}">Log Symptoms</button>
                 <button class="add-symptoms-btn" style="width:100%;margin-bottom:12px;border-radius:12px;background-color:var(--powder-pink);" onclick="startMeditation(5)">Start Meditation</button>
                 <button class="add-symptoms-btn" style="width:100%;border-radius:12px;background-color:var(--dot-teal);" onclick="trackWater()">💧 Track Water</button>
             </div>
@@ -180,23 +173,9 @@
 
     <script src="wellness.js"></script>
 
-    <!-- React 18 + Babel Standalone (same CDN as dashboard – no build step) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- SymptomTracker component – self-mounts into #symptom-tracker-root -->
-    <script type="text/babel" src="components/SymptomTracker.jsx" data-type="module"></script>
-
-    <!-- Fallback mount guard -->
-    <script type="text/babel">
-      window.addEventListener('load', function() {
-        var el = document.getElementById('symptom-tracker-root');
-        if (el && !el.dataset.rm && typeof SymptomTracker !== 'undefined') {
-          el.dataset.rm = '1';
-          ReactDOM.createRoot(el).render(React.createElement(SymptomTracker));
-        }
-      });
-    </script>
+    <!-- Same React bundle as dashboard (SymptomTracker only mounts here) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="js/eraya-react-dashboard.js"></script>
 </body>
 </html>
