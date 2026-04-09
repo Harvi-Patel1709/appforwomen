@@ -388,6 +388,7 @@
 
     <script>
         (function () {
+            // ── Data loader (identical key/defaults to CalendarComponent & CycleCounter) ──
             function getCycleData() {
                 try {
                     var d = JSON.parse(localStorage.getItem('userData') || '{}');
@@ -413,84 +414,98 @@
                 var now = new Date();
                 now.setHours(0, 0, 0, 0);
 
+                // ── Core cycle maths (mirrors CalendarComponent.getDayType + CycleCounter.computeCycleInfo) ──
                 var msDiff = now - cd.lastPeriod;
                 var daysDiff = Math.floor(msDiff / 86400000);
                 var dayInCycle = ((daysDiff % cd.cycleLength) + cd.cycleLength) % cd.cycleLength;
                 var cycleDay = dayInCycle + 1;
 
-                // Next period = start of the next cycle after the current one
-                var cyclesElapsed = Math.floor(daysDiff / cd.cycleLength);
-                var nextPeriod = new Date(cd.lastPeriod.getTime() + (cyclesElapsed + 1) * cd.cycleLength * 86400000);
-                var daysUntilNext = Math.max(0, Math.ceil((nextPeriod - now) / 86400000));
+                // Ovulation day (0-based index from cycle start).
+                // Uses Math.max(cycleLength - 14, periodLength + 1) — exact same guard as CalendarComponent & CycleCounter.
+                var ovDay = Math.max(cd.cycleLength - 14, cd.periodLength + 1);
 
-                // Ovulation day index within cycle (0-based: day 1 = index 0)
-                // Standard formula: ovulation occurs cycleLength - 14 days from cycle start
-                var ovDayIndex = Math.max(cd.cycleLength - 14, cd.periodLength);
-
-                // Current phase
+                // ── Current phase — mirrors CycleCounter exactly ──
+                // Fertile/ovulation window: ovDay-3 … ovDay+1  (matches CalendarComponent getDayType)
                 var phaseName, activeIdx;
                 if (dayInCycle < cd.periodLength) {
                     phaseName = 'Menstrual'; activeIdx = 0;
-                } else if (dayInCycle < ovDayIndex - 2) {
+                } else if (dayInCycle < ovDay - 3) {
                     phaseName = 'Follicular'; activeIdx = 1;
-                } else if (dayInCycle >= ovDayIndex - 2 && dayInCycle <= ovDayIndex + 1) {
+                } else if (dayInCycle <= ovDay + 1) {
                     phaseName = 'Fertile / Ovulation'; activeIdx = 2;
                 } else {
                     phaseName = 'Luteal'; activeIdx = 3;
                 }
 
-                // Overview header
+                // ── Next period — mirrors CycleCounter exactly ──
+                // Reconstruct the current cycle start, then add one full cycle.
+                var cycleStartMs = cd.lastPeriod.getTime() + (daysDiff - dayInCycle) * 86400000;
+                var nextPeriod = new Date(cycleStartMs + cd.cycleLength * 86400000);
+                var daysUntilNext = Math.max(0, Math.ceil((nextPeriod - now) / 86400000));
+
+                // ── Overview header ──
                 var overviewH2 = document.querySelector('.cycle-overview h2');
                 if (overviewH2) overviewH2.textContent = 'Current Cycle Day: ' + cycleDay;
 
                 var overviewSub = document.querySelector('.cycle-overview > p');
-                if (overviewSub) overviewSub.textContent = "You\u2019re in the " + phaseName + " phase";
+                if (overviewSub) overviewSub.textContent = 'You\u2019re in the ' + phaseName + ' phase';
 
-                // Stat boxes
+                // ── Stat boxes ──
                 var statValues = document.querySelectorAll('.stat-box .stat-value');
                 if (statValues[0]) statValues[0].textContent = cd.cycleLength;
                 if (statValues[1]) statValues[1].textContent = cd.periodLength;
                 if (statValues[2]) statValues[2].textContent = daysUntilNext;
 
-                // Phase day ranges (1-based labels for display)
-                var ovDayDisplay = ovDayIndex + 1;
+                // ── Phase day-range labels (1-based display) ──
+                // Menstrual:   day 1  … periodLength
+                // Follicular:  day periodLength+1 … ovDay-3      (0-based: periodLength … ovDay-4)
+                // Fertile/Ov:  day ovDay-2 … ovDay+2             (0-based: ovDay-3 … ovDay+1)
+                // Luteal:      day ovDay+3 … cycleLength          (0-based: ovDay+2 … cycleLength-1)
                 var phaseDayEls = document.querySelectorAll('.phase-days');
-                if (phaseDayEls[0]) phaseDayEls[0].textContent = 'Days 1\u2013' + cd.periodLength;
-                if (phaseDayEls[1]) phaseDayEls[1].textContent = 'Days ' + (cd.periodLength + 1) + '\u2013' + (ovDayDisplay - 3);
-                if (phaseDayEls[2]) phaseDayEls[2].textContent = 'Days ' + (ovDayDisplay - 2) + '\u2013' + (ovDayDisplay + 1);
-                if (phaseDayEls[3]) phaseDayEls[3].textContent = 'Days ' + (ovDayDisplay + 2) + '\u2013' + cd.cycleLength;
+                if (phaseDayEls[0]) phaseDayEls[0].textContent =
+                    'Days 1\u2013' + cd.periodLength;
+                if (phaseDayEls[1]) phaseDayEls[1].textContent =
+                    'Days ' + (cd.periodLength + 1) + '\u2013' + (ovDay - 2);   // follicular end = ovDay-3 (0-based) = ovDay-2 (1-based)
+                if (phaseDayEls[2]) phaseDayEls[2].textContent =
+                    'Days ' + (ovDay - 2) + '\u2013' + (ovDay + 2);             // fertile start = ovDay-3 (0-based) = ovDay-2 (1-based)
+                if (phaseDayEls[3]) phaseDayEls[3].textContent =
+                    'Days ' + (ovDay + 3) + '\u2013' + cd.cycleLength;          // luteal start = ovDay+2 (0-based) = ovDay+3 (1-based)
 
-                // Active phase marker
+                // ── Active phase marker ──
                 var phaseMarkers = document.querySelectorAll('.phase-marker');
                 phaseMarkers.forEach(function (m) { m.classList.remove('active'); });
                 if (phaseMarkers[activeIdx]) phaseMarkers[activeIdx].classList.add('active');
 
-                // Ovulation description
+                // ── Ovulation phase description (flag if currently here) ──
                 var phaseDescs = document.querySelectorAll('.phase-description');
                 if (phaseDescs[2]) {
                     phaseDescs[2].textContent = activeIdx === 2
-                        ? "Peak energy and confidence. You\u2019re currently here! Perfect time for important meetings and high-intensity workouts."
-                        : "Peak energy and confidence. Perfect time for important meetings and high-intensity workouts.";
+                        ? 'Peak energy and confidence. You\u2019re currently here! Perfect time for important meetings and high-intensity workouts.'
+                        : 'Peak energy and confidence. Perfect time for important meetings and high-intensity workouts.';
                 }
 
-                // ── Prediction dates (all relative to nextPeriod as cycle day 1) ──
+                // ── Upcoming Predictions ──
+                // All dates are offsets from nextPeriod (which is the start of the NEXT cycle = day 1 of that cycle).
+                // The same ovDay formula applies within that next cycle.
+
                 var predDates = document.querySelectorAll('.prediction-date');
 
-                // Next Period
+                // Next Period start
                 if (predDates[0]) predDates[0].textContent = fmtDate(nextPeriod);
 
-                // Next Ovulation = nextPeriod + ovDayIndex days (since ovDayIndex is 0-based offset from cycle start)
-                var nextOvulation = new Date(nextPeriod.getTime() + ovDayIndex * 86400000);
+                // Next Ovulation = nextPeriod + ovDay days (ovDay is 0-based index, so day ovDay+1 of the next cycle)
+                var nextOvulation = new Date(nextPeriod.getTime() + ovDay * 86400000);
                 if (predDates[1]) predDates[1].textContent = fmtDate(nextOvulation);
 
-                // Fertile Window = 5 days ending on ovulation day (ovDay-2 to ovDay+1 in 0-based = ovDayIndex-2 to ovDayIndex+1)
-                var fertileStart = new Date(nextPeriod.getTime() + (ovDayIndex - 2) * 86400000);
-                var fertileEnd = new Date(nextPeriod.getTime() + (ovDayIndex + 1) * 86400000);
+                // Fertile Window = ovDay-3 … ovDay+1 (0-based) from nextPeriod — mirrors CalendarComponent getDayType
+                var fertileStart = new Date(nextPeriod.getTime() + (ovDay - 3) * 86400000);
+                var fertileEnd = new Date(nextPeriod.getTime() + (ovDay + 1) * 86400000);
                 if (predDates[2]) predDates[2].textContent = fmtDateShort(fertileStart) + ' \u2013 ' + fmtDateShort(fertileEnd);
 
-                // Peak Energy = follicular end through ovulation (ovDayIndex-3 to ovDayIndex+1)
-                var peakStart = new Date(nextPeriod.getTime() + (ovDayIndex - 3) * 86400000);
-                var peakEnd = new Date(nextPeriod.getTime() + (ovDayIndex + 1) * 86400000);
+                // Peak Energy = follicular→fertile transition through ovulation: ovDay-3 … ovDay+1 (same as fertile window)
+                // This matches CycleCounter's definition of Ovulation phase (highest productivity)
+                var peakStart = new Date(nextPeriod.getTime() + (ovDay - 3) * 86400000);
+                var peakEnd = new Date(nextPeriod.getTime() + (ovDay + 1) * 86400000);
                 if (predDates[3]) predDates[3].textContent = fmtDateShort(peakStart) + ' \u2013 ' + fmtDateShort(peakEnd);
             });
         })();
