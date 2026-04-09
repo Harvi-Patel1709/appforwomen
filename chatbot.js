@@ -8,7 +8,7 @@
 
 (function () {
   // ── CONFIG ────────────────────────────────────────────────
-  const GEMINI_API_KEY = 'AIzaSyDHFRHWW9GCBbCxLTv-rpv2_ABd1mIudG8'; // Replace this!
+  const GEMINI_API_KEY = 'GEMINI_API_KEY'; // Replace this!
   const GEMINI_URL =
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' +
     GEMINI_API_KEY;
