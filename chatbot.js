@@ -8,24 +8,7 @@
 
 (function () {
   // ── CONFIG ────────────────────────────────────────────────
-  const GEMINI_API_KEY = 'GEMINI_API_KEY'; // Replace this!
-  const GEMINI_URL =
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' +
-    GEMINI_API_KEY;
-
-  const SYSTEM_PROMPT = `You are Eraya, a warm and knowledgeable women's health assistant built into the Eraya period wellness app.
-You help users with questions about:
-- Menstrual health, cycle tracking, period pain
-- PCOS, endometriosis, hormonal conditions
-- Nutrition, exercise, and wellness during the cycle
-- Mental health and emotional wellbeing
-- How to use the Eraya app (finding doctors, logging symptoms, tracking cycles)
-
-Guidelines:
-- Keep answers concise, friendly, and easy to understand.
-- Never diagnose. For serious or urgent symptoms, always advise consulting a doctor.
-- Be empathetic — many users may feel anxious or embarrassed about their symptoms.
-- If a question is completely unrelated to women's health or the app, politely say you're specialized for health topics.`;
+  // Gemini API key is read from GEMINI_API_KEY on the server (/api/chatbot proxy).
 
   // ── STATE ─────────────────────────────────────────────────
   let conversationHistory = []; // Gemini multi-turn format
@@ -177,19 +160,11 @@ Guidelines:
     showTypingIndicator(true);
 
     try {
-      const response = await fetch(GEMINI_URL, {
+      const response = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: SYSTEM_PROMPT }],
-          },
-          contents: conversationHistory,
-          generationConfig: {
-            maxOutputTokens: 400,
-            temperature: 0.7,
-          },
-        }),
+        credentials: 'include',
+        body: JSON.stringify({ contents: conversationHistory }),
       });
 
       if (!response.ok) {
@@ -215,8 +190,14 @@ Guidelines:
       console.error('[Eraya Chatbot]', err);
 
       let errorMsg = "Sorry, I'm having trouble connecting right now. Please try again in a moment. 🌸";
-      if (err.message && err.message.includes('API_KEY')) {
-        errorMsg = 'Chatbot API key not configured. Please add your Gemini API key to chatbot.js.';
+      if (
+        err.message &&
+        (err.message.includes('API_KEY') ||
+          err.message.includes('not configured') ||
+          err.message.includes('GEMINI_API_KEY'))
+      ) {
+        errorMsg =
+          'The assistant is not available yet. Ask your administrator to set GEMINI_API_KEY on the server.';
       }
       addMessage('bot', errorMsg);
 

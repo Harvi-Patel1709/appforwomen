@@ -2,8 +2,18 @@
 Eraya - Period Wellness App
 Flask app: API (auth, appointments, symptoms) + static file serving.
 """
+import json
 import os
+import urllib.error
+import urllib.request
+from pathlib import Path
+from urllib.parse import quote
+
+from dotenv import load_dotenv
 from flask import Flask, send_from_directory, request, jsonify, session
+
+# Local dev: load `.env` from project root (ignored by git). Does not override existing env vars.
+load_dotenv(Path(__file__).resolve().parent / '.env')
 
 # Disable Flask's built-in static route so our custom file serving logic controls caching.
 app = Flask(__name__, static_folder=None)
@@ -28,6 +38,25 @@ def static_max_age(path):
 
 import db
 db.init_db()
+
+GEMINI_GENERATE_URL = (
+    'https://generativelanguage.googleapis.com/v1beta/models/'
+    'gemini-2.5-flash:generateContent?key={key}'
+)
+
+CHATBOT_SYSTEM_PROMPT = """You are Eraya, a warm and knowledgeable women's health assistant built into the Eraya period wellness app.
+You help users with questions about:
+- Menstrual health, cycle tracking, period pain
+- PCOS, endometriosis, hormonal conditions
+- Nutrition, exercise, and wellness during the cycle
+- Mental health and emotional wellbeing
+- How to use the Eraya app (finding doctors, logging symptoms, tracking cycles)
+
+Guidelines:
+- Keep answers concise, friendly, and easy to understand.
+- Never diagnose. For serious or urgent symptoms, always advise consulting a doctor.
+- Be empathetic — many users may feel anxious or embarrassed about their symptoms.
+- If a question is completely unrelated to women's health or the app, politely say you're specialized for health topics."""
 
 
 def require_login(f):
@@ -144,6 +173,70 @@ def api_symptoms_create():
     if err:
         return jsonify({'error': err}), 400
     return jsonify({'id': lid, 'message': 'Symptoms saved'})
+
+
+# ---------- Gemini chatbot proxy (key stays server-side) ----------
+@app.route('/api/chatbot', methods=['POST'])
+def api_chatbot():
+    api_key = (os.environ.get('GEMINI_API_KEY') or '').strip()
+    if not api_key:
+        return jsonify({
+            'error': {
+                'message': 'Chatbot is not configured. Set the GEMINI_API_KEY environment variable on the server.',
+            },
+        }), 503
+
+    data = request.get_json(silent=True) or {}
+    contents = data.get('contents')
+    if not isinstance(contents, list) or len(contents) == 0:
+        return jsonify({
+            'error': {'message': 'Invalid request: non-empty contents array required'},
+        }), 400
+    if len(contents) > 60:
+        return jsonify({
+            'error': {'message': 'Conversation too long; clear the chat and try again.'},
+        }), 400
+
+    for item in contents:
+        if not isinstance(item, dict):
+            return jsonify({'error': {'message': 'Invalid message format'}}), 400
+        role = item.get('role')
+        parts = item.get('parts')
+        if role not in ('user', 'model') or not isinstance(parts, list):
+            return jsonify({'error': {'message': 'Invalid message format'}}), 400
+
+    payload = {
+        'system_instruction': {'parts': [{'text': CHATBOT_SYSTEM_PROMPT}]},
+        'contents': contents,
+        'generationConfig': {
+            'maxOutputTokens': 400,
+            'temperature': 0.7,
+        },
+    }
+    raw = json.dumps(payload).encode('utf-8')
+    if len(raw) > 120_000:
+        return jsonify({'error': {'message': 'Request too large'}}), 400
+
+    url = GEMINI_GENERATE_URL.format(key=quote(api_key, safe=''))
+    req = urllib.request.Request(
+        url,
+        data=raw,
+        headers={'Content-Type': 'application/json'},
+        method='POST',
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            out = json.load(resp)
+        return jsonify(out)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        try:
+            err_json = json.loads(body)
+        except json.JSONDecodeError:
+            err_json = {'error': {'message': body or 'Upstream API error'}}
+        return jsonify(err_json), e.code
+    except urllib.error.URLError as e:
+        return jsonify({'error': {'message': str(e.reason)}}), 502
 
 
 # ---------- Static files (must be last) ----------

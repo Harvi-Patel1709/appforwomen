@@ -28,6 +28,16 @@ const OSM_SPECIALTY_MAP = {
     'reproductive_endocrinology': 'pcos',
 };
 
+// Last map center used for "Search" refresh (geolocation or place search)
+let _lastSearchLat = null;
+let _lastSearchLon = null;
+
+// Nominatim requires an identifying User-Agent (see https://operations.osmfoundation.org/policies/nominatim/)
+const NOMINATIM_HEADERS = {
+    'Accept-Language': 'en',
+    'User-Agent': 'ErayaPeriodApp/1.0 (women health directory; support@eraya.com)',
+};
+
 // Reverse-geocode queue – Nominatim allows 1 req/s; we chain promises to throttle
 let _geocodeChain = Promise.resolve();
 
@@ -38,7 +48,7 @@ function reverseGeocode(lat, lon) {
         return fetch(
             'https://nominatim.openstreetmap.org/reverse?lat=' + lat +
             '&lon=' + lon + '&format=json&addressdetails=1',
-            { headers: { 'Accept-Language': 'en' } }
+            { headers: NOMINATIM_HEADERS }
         )
             .then(function (r) { return r.json(); })
             .then(function (json) {
@@ -104,7 +114,8 @@ function osmToDoctor(el, index) {
         _lat: lat,
         _lon: lon,
         _needsGeocode: !location,
-        id: el.id,
+        id: (el.type || 'node') + '/' + el.id,
+        _osmId: el.id,
         name: name,
         specialty: specialty,
         avatar: avatar,
@@ -139,36 +150,87 @@ var OVERPASS_ENDPOINTS = [
 
 function buildSpecialtyQuery(lat, lon, radius, keywords) {
     return [
-        '[out:json][timeout:25];',
+        '[out:json][timeout:45];',
         '(',
         '  node["healthcare:speciality"~"' + keywords + '",i](around:' + radius + ',' + lat + ',' + lon + ');',
         '  node["healthcare:specialty"~"' + keywords + '",i](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  way["healthcare:speciality"~"' + keywords + '",i](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  way["healthcare:specialty"~"' + keywords + '",i](around:' + radius + ',' + lat + ',' + lon + ');',
         '  node["name"~"' + keywords + '",i](around:' + radius + ',' + lat + ',' + lon + ');',
         ');',
-        'out 10;'
+        'out center 15;'
     ].join('\n');
+}
+
+function buildBroadHealthcareQuery(lat, lon, radius) {
+    return [
+        '[out:json][timeout:45];',
+        '(',
+        '  node["healthcare"="doctor"](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  node["healthcare"="physician"](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  node["healthcare"="clinic"](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  node["healthcare"="centre"](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  node["amenity"="doctors"](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  way["healthcare"="doctor"](around:' + radius + ',' + lat + ',' + lon + ');',
+        '  way["healthcare"="clinic"](around:' + radius + ',' + lat + ',' + lon + ');',
+        ');',
+        'out center 25;'
+    ].join('\n');
+}
+
+function fetchWithTimeout(url, init, ms) {
+    var ctrl = new AbortController();
+    var t = setTimeout(function () { ctrl.abort(); }, ms);
+    return fetch(url, Object.assign({}, init, { signal: ctrl.signal }))
+        .finally(function () { clearTimeout(t); });
 }
 
 function fetchFromEndpoint(query, endpointIndex) {
     if (endpointIndex >= OVERPASS_ENDPOINTS.length) {
-        return Promise.reject(new Error('All endpoints failed'));
+        return Promise.reject(new Error('All Overpass endpoints failed'));
     }
-    var url = OVERPASS_ENDPOINTS[endpointIndex] + '?data=' + encodeURIComponent(query);
-    return fetch(url, { signal: AbortSignal.timeout(20000) })
+    var endpoint = OVERPASS_ENDPOINTS[endpointIndex];
+    return fetchWithTimeout(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(query),
+    }, 55000)
         .then(function (r) {
-            if (!r.ok) throw new Error('Overpass returned ' + r.status);
-            return r.json();
+            return r.text().then(function (text) {
+                if (!r.ok) {
+                    throw new Error('Overpass HTTP ' + r.status + ': ' + (text || '').slice(0, 120));
+                }
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    if (text.indexOf('runtime error') !== -1 || text.indexOf('too busy') !== -1) {
+                        throw new Error('Overpass server busy');
+                    }
+                    throw new Error('Invalid Overpass response');
+                }
+            });
         })
         .catch(function (err) {
-            console.warn('Endpoint ' + OVERPASS_ENDPOINTS[endpointIndex] + ' failed:', err.message);
+            console.warn('Overpass ' + endpoint + ':', err.message);
             return fetchFromEndpoint(query, endpointIndex + 1);
         });
 }
 
 function fetchDoctorsFromOSM(lat, lon) {
-    var radius = 4000;
+    var radius = 12000;
+    _lastSearchLat = lat;
+    _lastSearchLon = lon;
 
     showLoadingState();
+
+    var broadQuery = buildBroadHealthcareQuery(lat, lon, radius);
+    var broadPromise = fetchFromEndpoint(broadQuery, 0)
+        .then(function (data) {
+            return (data.elements || [])
+                .map(function (el, i) { return osmToDoctor(el, i); })
+                .filter(Boolean);
+        })
+        .catch(function () { return []; });
 
     var promises = SPECIALTY_QUERIES.map(function (spec) {
         var query = buildSpecialtyQuery(lat, lon, radius, spec.keywords);
@@ -185,6 +247,8 @@ function fetchDoctorsFromOSM(lat, lon) {
             .catch(function () { return []; });
     });
 
+    promises.unshift(broadPromise);
+
     Promise.all(promises).then(function (results) {
         var seen = {};
         var all = [];
@@ -198,12 +262,12 @@ function fetchDoctorsFromOSM(lat, lon) {
         });
 
         if (all.length === 0) {
-            showNoResults('No specialist doctors found within 4 km. OSM data may be limited in your area.');
+            showNoResults('No healthcare places found in OpenStreetMap within ~12 km of this area. Try the search box with a city or neighborhood name, or check back later.');
             return;
         }
 
         doctorsData = all;
-        displayDoctors(doctorsData);
+        applyCurrentFilterOrAll();
 
         var needsGeocode = all.filter(function (d) { return d._needsGeocode && d._lat; });
         needsGeocode.forEach(function (doc) {
@@ -212,16 +276,32 @@ function fetchDoctorsFromOSM(lat, lon) {
                     doc.location = addr;
                     var grid = document.getElementById('doctorsGrid');
                     if (grid) {
-                        var cardEl = grid.querySelector('[data-id="' + doc.id + '"]');
-                        if (cardEl) {
-                            var locSpan = cardEl.querySelector('.doctor-location-text');
-                            if (locSpan) locSpan.textContent = addr;
-                        }
+                        updateDoctorCardLocation(grid, doc.id, addr);
                     }
                 }
             });
         });
     });
+}
+
+function updateDoctorCardLocation(grid, docId, addr) {
+    var cards = grid.querySelectorAll('.doctor-card[data-id]');
+    var idStr = String(docId);
+    for (var i = 0; i < cards.length; i++) {
+        if (cards[i].getAttribute('data-id') === idStr) {
+            var locSpan = cards[i].querySelector('.doctor-location-text');
+            if (locSpan) locSpan.textContent = addr;
+            return;
+        }
+    }
+}
+
+function applyCurrentFilterOrAll() {
+    if (currentFilter === 'all') {
+        displayDoctors(doctorsData);
+    } else {
+        displayDoctors(doctorsData.filter(function (d) { return d.specialty === currentFilter; }));
+    }
 }
 
 // Show a loading message in the grid (same grid element, no UI change)
@@ -248,10 +328,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // Wire up search input
     var searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('keypress', function (e) {
+        searchInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
+                e.preventDefault();
                 searchDoctors();
             }
+        });
+    }
+
+    var searchBtn = document.getElementById('searchDoctorsBtn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', function () {
+            searchDoctors();
         });
     }
 
@@ -305,16 +393,17 @@ function createDoctorCard(doctor) {
         : '';
 
     const feeRow = doctor.consultationFee
-        ? `<div class="detail-row"><span class="detail-icon">💰</span><span>Consultation: ${doctor.consultationFee}</span></div>`
+        ? `<div class="detail-row"><span class="detail-icon">💰</span><span>Consultation: ${escapeHtml(String(doctor.consultationFee))}</span></div>`
         : '';
 
-    card.setAttribute('data-id', doctor.id);
+    var idJson = JSON.stringify(doctor.id);
+    card.setAttribute('data-id', String(doctor.id));
     card.innerHTML = `
         <div class="doctor-header">
             <div class="doctor-avatar">${doctor.avatar}</div>
             <div class="doctor-basic-info">
-                <h3>${doctor.name}</h3>
-                <div class="doctor-specialty">${capitalizeSpecialty(doctor.specialty)}</div>
+                <h3>${escapeHtml(doctor.name)}</h3>
+                <div class="doctor-specialty">${escapeHtml(capitalizeSpecialty(doctor.specialty))}</div>
                 <div class="rating">${ratingText}</div>
                 ${availableBadge}
             </div>
@@ -322,26 +411,37 @@ function createDoctorCard(doctor) {
         <div class="doctor-details">
             <div class="detail-row">
                 <span class="detail-icon">📍</span>
-                <span class="doctor-location-text">${doctor.location}</span>
+                <span class="doctor-location-text">${escapeHtml(String(doctor.location))}</span>
             </div>
             ${experienceRow}
             <div class="detail-row">
                 <span class="detail-icon">🏥</span>
-                <span>${doctor.hospital}</span>
+                <span>${escapeHtml(String(doctor.hospital))}</span>
             </div>
             ${feeRow}
         </div>
         <div class="doctor-actions">
-            <button class="contact-btn" onclick="contactDoctor(${doctor.id})">
+            <button type="button" class="contact-btn" onclick="contactDoctor(${idJson})">
                 📞 Contact
             </button>
-            <button class="book-btn" onclick="bookAppointment(${doctor.id})">
+            <button type="button" class="book-btn" onclick="bookAppointment(${idJson})">
                 Book Appointment
             </button>
         </div>
     `;
 
     return card;
+}
+
+function escapeHtml(text) {
+    if (text == null) return '';
+    var div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+function jsStringLiteral(s) {
+    return JSON.stringify(String(s));
 }
 
 // Capitalize specialty
@@ -366,28 +466,72 @@ function filterDoctors(specialty, element) {
 
     currentFilter = specialty;
 
-    // Filter and display
-    if (specialty === 'all') {
-        displayDoctors(doctorsData);
-    } else {
-        const filtered = doctorsData.filter(doc => doc.specialty === specialty);
-        displayDoctors(filtered);
-    }
+    applyCurrentFilterOrAll();
 }
 
-// Search doctors
+// Search: filter current list; empty search refreshes nearby; if no matches, geocode place name
 function searchDoctors() {
-    const searchInput = document.getElementById('searchInput');
-    const searchTerm = (searchInput && searchInput.value) ? searchInput.value.toLowerCase() : '';
+    var searchInput = document.getElementById('searchInput');
+    var raw = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
 
-    const filtered = doctorsData.filter(doctor => {
-        return doctor.name.toLowerCase().includes(searchTerm) ||
-            doctor.specialty.toLowerCase().includes(searchTerm) ||
-            doctor.location.toLowerCase().includes(searchTerm) ||
-            doctor.hospital.toLowerCase().includes(searchTerm);
-    });
+    if (raw === '') {
+        if (_lastSearchLat != null && _lastSearchLon != null) {
+            fetchDoctorsFromOSM(_lastSearchLat, _lastSearchLon);
+        } else {
+            applyCurrentFilterOrAll();
+        }
+        return;
+    }
 
-    displayDoctors(filtered);
+    var searchTerm = raw.toLowerCase();
+    var pool = currentFilter === 'all'
+        ? doctorsData.slice()
+        : doctorsData.filter(function (d) { return d.specialty === currentFilter; });
+
+    function rowMatch(d) {
+        var name = (d.name || '').toLowerCase();
+        var spec = (d.specialty || '').toLowerCase();
+        var loc = (d.location || '').toLowerCase();
+        var hosp = (d.hospital || '').toLowerCase();
+        return name.indexOf(searchTerm) !== -1 ||
+            spec.indexOf(searchTerm) !== -1 ||
+            loc.indexOf(searchTerm) !== -1 ||
+            hosp.indexOf(searchTerm) !== -1;
+    }
+
+    var matched = pool.filter(rowMatch);
+    if (matched.length > 0) {
+        displayDoctors(matched);
+        return;
+    }
+
+    geocodePlaceThenFetch(raw);
+}
+
+function geocodePlaceThenFetch(placeQuery) {
+    showLoadingState();
+    var url = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(placeQuery) + '&format=json&limit=1';
+    fetchWithTimeout(url, { headers: NOMINATIM_HEADERS }, 20000)
+        .then(function (r) {
+            if (!r.ok) throw new Error('Geocoding failed');
+            return r.json();
+        })
+        .then(function (results) {
+            if (!results || !results.length) {
+                showNoResults('No place matched “' + escapeHtml(placeQuery) + '”. Try a city or area name, or clear the search box and press Search to reload nearby.');
+                return;
+            }
+            var lat = parseFloat(results[0].lat);
+            var lon = parseFloat(results[0].lon);
+            if (isNaN(lat) || isNaN(lon)) {
+                showNoResults('Could not read coordinates for that place.');
+                return;
+            }
+            fetchDoctorsFromOSM(lat, lon);
+        })
+        .catch(function () {
+            showNoResults('Could not look up that location. Check your connection and try again.');
+        });
 }
 
 // Contact doctor
@@ -395,37 +539,46 @@ function contactDoctor(doctorId) {
     const doctor = doctorsData.find(d => d.id === doctorId);
     if (!doctor) return;
 
+    var phone = doctor.phone || '';
+    var email = doctor.email || '';
+    var telAttr = phone ? jsStringLiteral('tel:' + String(phone)) : '';
+    var mailAttr = email ? jsStringLiteral('mailto:' + String(email)) : '';
+    var phoneRow = phone
+        ? '<div class="contact-detail-item"><span class="detail-label">📱 Phone:</span><a href=' + telAttr + ' class="detail-value">' + escapeHtml(phone) + '</a></div>'
+        : '<div class="contact-detail-item"><span class="detail-label">📱 Phone:</span><span class="detail-value">Not listed in OpenStreetMap</span></div>';
+    var emailRow = email
+        ? '<div class="contact-detail-item"><span class="detail-label">📧 Email:</span><a href=' + mailAttr + ' class="detail-value">' + escapeHtml(email) + '</a></div>'
+        : '<div class="contact-detail-item"><span class="detail-label">📧 Email:</span><span class="detail-value">Not listed in OpenStreetMap</span></div>';
+    var callJs = phone ? 'window.location.href=' + jsStringLiteral('tel:' + String(phone)) : '';
+    var mailJs = email ? 'window.location.href=' + jsStringLiteral('mailto:' + String(email)) : '';
+    var callBtn = phone
+        ? '<button type="button" class="modal-btn call-btn" onclick=\'' + callJs + '\'>📞 Call Now</button>'
+        : '<button type="button" class="modal-btn call-btn" disabled style="opacity:0.5">📞 No phone listed</button>';
+    var mailBtn = email
+        ? '<button type="button" class="modal-btn email-btn" onclick=\'' + mailJs + '\'>📧 Send Email</button>'
+        : '<button type="button" class="modal-btn email-btn" disabled style="opacity:0.5">📧 No email listed</button>';
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
         <div class="modal-content contact-modal">
-            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-            <h2>Contact ${doctor.name}</h2>
+            <button type="button" class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            <h2>Contact ${escapeHtml(doctor.name)}</h2>
             <div class="contact-details">
-                <div class="contact-detail-item">
-                    <span class="detail-label">📱 Phone:</span>
-                    <a href="tel:${doctor.phone}" class="detail-value">${doctor.phone}</a>
-                </div>
-                <div class="contact-detail-item">
-                    <span class="detail-label">📧 Email:</span>
-                    <a href="mailto:${doctor.email}" class="detail-value">${doctor.email}</a>
-                </div>
+                ${phoneRow}
+                ${emailRow}
                 <div class="contact-detail-item">
                     <span class="detail-label">🏥 Hospital:</span>
-                    <span class="detail-value">${doctor.hospital}</span>
+                    <span class="detail-value">${escapeHtml(String(doctor.hospital))}</span>
                 </div>
                 <div class="contact-detail-item">
                     <span class="detail-label">📍 Location:</span>
-                    <span class="detail-value">${doctor.location}</span>
+                    <span class="detail-value">${escapeHtml(String(doctor.location))}</span>
                 </div>
             </div>
             <div class="modal-actions">
-                <button class="modal-btn call-btn" onclick="window.location.href='tel:${doctor.phone}'">
-                    📞 Call Now
-                </button>
-                <button class="modal-btn email-btn" onclick="window.location.href='mailto:${doctor.email}'">
-                    📧 Send Email
-                </button>
+                ${callBtn}
+                ${mailBtn}
             </div>
         </div>
     `;
@@ -450,13 +603,16 @@ function bookAppointment(doctorId) {
         return;
     }
 
+    var idJson = JSON.stringify(doctor.id);
+    var feeLabel = doctor.consultationFee ? escapeHtml(String(doctor.consultationFee)) : 'See clinic (not listed in map data)';
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
         <div class="modal-content booking-modal">
-            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-            <h2>Book Appointment with ${doctor.name}</h2>
-            <form onsubmit="submitBooking(event, ${doctorId})">
+            <button type="button" class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            <h2>Book Appointment with ${escapeHtml(doctor.name)}</h2>
+            <form onsubmit="submitBooking(event, ${idJson})">
                 <div class="form-group">
                     <label>Your Name</label>
                     <input type="text" name="patient_name" required placeholder="Enter your full name">
@@ -488,7 +644,7 @@ function bookAppointment(doctorId) {
                 <div class="booking-summary">
                     <div class="summary-row">
                         <span>Consultation Fee:</span>
-                        <span class="fee">${doctor.consultationFee}</span>
+                        <span class="fee">${feeLabel}</span>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -516,7 +672,7 @@ function submitBooking(event, doctorId) {
 
     const form = event.target;
     const payload = {
-        doctor_id: doctor.id,
+        doctor_id: typeof doctor._osmId === 'number' ? doctor._osmId : 0,
         doctor_name: doctor.name,
         preferred_date: form.elements['preferred_date'].value,
         preferred_time: form.elements['preferred_time'].value,
@@ -564,4 +720,10 @@ function callEmergency() {
     }
 }
 
-
+// Inline handlers in doctors.html / generated cards
+window.searchDoctors = searchDoctors;
+window.filterDoctors = filterDoctors;
+window.contactDoctor = contactDoctor;
+window.bookAppointment = bookAppointment;
+window.submitBooking = submitBooking;
+window.callEmergency = callEmergency;
