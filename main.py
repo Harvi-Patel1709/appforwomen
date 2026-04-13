@@ -7,7 +7,7 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import urlencode
 
 from dotenv import load_dotenv
 from flask import Flask, send_from_directory, request, jsonify, session
@@ -41,7 +41,7 @@ db.init_db()
 
 GEMINI_GENERATE_URL = (
     'https://generativelanguage.googleapis.com/v1beta/models/'
-    'gemini-2.5-flash:generateContent?key={key}'
+    'gemini-2.5-flash:generateContent'
 )
 
 CHATBOT_SYSTEM_PROMPT = """You are Eraya, a warm and knowledgeable women's health assistant built into the Eraya period wellness app.
@@ -217,7 +217,7 @@ def api_chatbot():
     if len(raw) > 120_000:
         return jsonify({'error': {'message': 'Request too large'}}), 400
 
-    url = GEMINI_GENERATE_URL.format(key=quote(api_key, safe=''))
+    url = GEMINI_GENERATE_URL + '?' + urlencode({'key': api_key})
     req = urllib.request.Request(
         url,
         data=raw,
